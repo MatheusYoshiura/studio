@@ -37,7 +37,8 @@ interface StoredUser {
   name: string;
   email: string;
   phone: string;
-  passwordHash: string; // In a real app, this would be a proper hash
+  passwordHash: string; 
+  avatarDataUrl?: string; // Added for profile picture
 }
 
 export function SignupForm() {
@@ -74,12 +75,12 @@ export function SignupForm() {
       return;
     }
 
-    // For demonstration, storing password directly. In real apps, HASH passwords.
     const newUser: StoredUser = {
       name: values.name,
       email: values.email,
       phone: values.phone,
-      passwordHash: values.password, // IMPORTANT: This is NOT secure. Hash passwords in real apps.
+      passwordHash: values.password, 
+      avatarDataUrl: undefined, // Initialize with no avatar
     };
 
     const updatedUsers = [...storedUsers, newUser];
@@ -181,3 +182,5 @@ export function SignupForm() {
     </Card>
   );
 }
+
+    

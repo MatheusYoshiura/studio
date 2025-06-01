@@ -32,7 +32,8 @@ interface StoredUser {
   name: string;
   email: string;
   phone: string;
-  passwordHash: string; // In a real app, this would be a proper hash
+  passwordHash: string; 
+  avatarDataUrl?: string; // Added for profile picture
 }
 
 export function LoginForm() {
@@ -59,19 +60,17 @@ export function LoginForm() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     const user = storedUsers.find(u => u.email === values.email);
 
-    // IMPORTANT: Password check is direct string comparison. NOT secure for real apps.
     if (user && user.passwordHash === values.password) {
-      localStorage.setItem(CURRENT_USER_EMAIL_KEY, user.email); // Store current user's email
+      localStorage.setItem(CURRENT_USER_EMAIL_KEY, user.email); 
       toast({
         title: "Login Bem-sucedido!",
         description: "Redirecionando para o dashboard...",
       });
-      // Simulate API call
       setTimeout(() => {
         router.push("/dashboard");
       }, 1000);
     } else {
-      localStorage.removeItem(CURRENT_USER_EMAIL_KEY); // Clear if login fails
+      localStorage.removeItem(CURRENT_USER_EMAIL_KEY); 
       toast({
         title: "Falha no Login",
         description: "Usuário não encontrado ou senha incorreta.",
@@ -139,3 +138,5 @@ export function LoginForm() {
     </Card>
   );
 }
+
+    

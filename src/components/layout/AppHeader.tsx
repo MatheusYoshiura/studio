@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Bell, UserCircle, Settings } from "lucide-react"; // Added Settings
+import { Bell, UserCircle, Settings } from "lucide-react"; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 
 const CURRENT_USER_EMAIL_KEY = "xmanager-currentUserEmail";
 const USERS_STORAGE_KEY = "xmanager-users";
@@ -23,6 +25,7 @@ interface StoredUser {
   name: string;
   email: string;
   phone: string;
+  avatarDataUrl?: string;
 }
 
 export default function AppHeader() {
@@ -37,18 +40,43 @@ export default function AppHeader() {
         const allUsers: StoredUser[] = JSON.parse(usersFromStorage);
         const foundUser = allUsers.find(u => u.email === userEmail);
         if (foundUser) {
-          setCurrentUser({name: foundUser.name, email: foundUser.email, phone: foundUser.phone});
+          setCurrentUser(foundUser);
         }
       }
     }
+    // Listen for storage changes to update avatar in header if changed on profile page
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === USERS_STORAGE_KEY && userEmail) {
+             const usersFromStorage = localStorage.getItem(USERS_STORAGE_KEY);
+             if (usersFromStorage) {
+                const allUsers: StoredUser[] = JSON.parse(usersFromStorage);
+                const updatedUser = allUsers.find(u => u.email === userEmail);
+                if (updatedUser) {
+                    setCurrentUser(updatedUser);
+                }
+             }
+        }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
 
   const handleLogout = () => {
     localStorage.removeItem(CURRENT_USER_EMAIL_KEY);
-    setCurrentUser(null); // Clear current user state
+    setCurrentUser(null); 
     router.push("/auth/login");
   };
+  
+  const getInitials = (name: string = "") => {
+    const names = name.split(' ');
+    const firstInitial = names[0] ? names[0][0] : '';
+    const lastInitial = names.length > 1 ? names[names.length - 1][0] : '';
+    return `${firstInitial}${lastInitial}`.toUpperCase() || "U";
+  }
+
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border bg-header-bg px-4 md:px-6 shrink-0">
@@ -68,8 +96,13 @@ export default function AppHeader() {
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10">
-              <UserCircle className="h-6 w-6" />
+            <Button variant="ghost" className="rounded-full p-0 h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10">
+               <Avatar className="h-8 w-8">
+                <AvatarImage src={currentUser?.avatarDataUrl || undefined} alt={currentUser?.name} />
+                <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                  {currentUser ? getInitials(currentUser.name) : <UserCircle className="h-5 w-5" />}
+                </AvatarFallback>
+              </Avatar>
               <span className="sr-only">Menu do Usuário</span>
             </Button>
           </DropdownMenuTrigger>
@@ -88,12 +121,6 @@ export default function AppHeader() {
                  <UserCircle className="mr-2 h-4 w-4" /> Perfil
               </Link>
             </DropdownMenuItem>
-            {/* Placeholder for settings, can be uncommented if a settings page is added */}
-            {/* <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center w-full">
-                <Settings className="mr-2 h-4 w-4" /> Configurações
-              </Link>
-            </DropdownMenuItem> */}
             <DropdownMenuItem>Suporte</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
@@ -105,3 +132,5 @@ export default function AppHeader() {
     </header>
   );
 }
+
+    
