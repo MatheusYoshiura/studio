@@ -16,7 +16,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, ListChecks, CalendarDays, Settings, LogOut, /* BarChart3, */ UserCircle } from "lucide-react"; // Removed BarChart3
+import { LayoutDashboard, ListChecks, CalendarDays, LogOut, /* BarChart3, */ UserCircle, Settings } from "lucide-react"; // Removed BarChart3, kept Settings for Profile if needed, or can remove if not used
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navItems = [
@@ -100,6 +100,7 @@ export default function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {/* Removed Settings Item
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
@@ -107,12 +108,13 @@ export default function AppSidebar() {
               tooltip={{ children: "Configurações", className: "bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-accent"}}
               className="justify-start"
             >
-              <Link href="/settings"> {/* Placeholder link */}
+              <Link href="/settings"> 
                 <Settings className="h-5 w-5" />
                 <span className="group-data-[[data-collapsible=icon]]:hidden">Configurações</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          */}
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}
