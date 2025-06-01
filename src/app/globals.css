@@ -87,4 +87,21 @@
   textarea::placeholder {
     @apply text-muted-foreground opacity-70;
   }
+
+  /* Calendar day with tasks indicator */
+  .rdp-day_hasTask:not([aria-selected="true"]) {
+    position: relative;
+  }
+  .rdp-day_hasTask:not([aria-selected="true"])::after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: hsl(var(--accent));
+  }
 }
