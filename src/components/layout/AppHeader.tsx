@@ -107,7 +107,7 @@ export default function AppHeader() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="rounded-full p-0 h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10">
-               <Avatar className="h-8 w-8">
+               <Avatar key={currentUser?.avatarDataUrl || 'no-avatar'} className="h-8 w-8">
                 <AvatarImage src={currentUser?.avatarDataUrl || undefined} alt={currentUser?.name || "User Avatar"} />
                 <AvatarFallback className="bg-primary/20 text-primary text-xs">
                   {currentUser ? getInitials(currentUser.name) : <UserCircle className="h-5 w-5" />}
