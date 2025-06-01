@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { Task, Subtask, Priority, TaskStatus } from "@/lib/types";
+import type { Task, Subtask, Priority, TaskStatus, FileAttachment } from "@/lib/types";
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 
 // Mock data for demonstration - used as a fallback if localStorage is empty
@@ -15,8 +15,8 @@ const initialTasksData: Task[] = [
     status: "em-progresso",
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     subtasks: [
-      { id: "ctx-s1-1", name: "Definir paleta de cores (Contexto)", priority: "Alta", deadline: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), status: "concluída", createdAt: new Date().toISOString() },
-      { id: "ctx-s1-2", name: "Criar wireframes (Contexto)", priority: "Média", deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), status: "pendente", createdAt: new Date().toISOString() },
+      { id: "ctx-s1-1", name: "Definir paleta de cores (Contexto)", priority: "Alta", deadline: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), status: "concluída", createdAt: new Date().toISOString(), attachments: [] },
+      { id: "ctx-s1-2", name: "Criar wireframes (Contexto)", priority: "Média", deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), status: "pendente", createdAt: new Date().toISOString(), attachments: [] },
     ],
     attachments: [{ id: "ctx-f1", name: "briefing_contexto.pdf", url: "#", size: 102400, type: "application/pdf" }]
   },
@@ -28,9 +28,10 @@ const initialTasksData: Task[] = [
     status: "pendente",
     createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
     subtasks: [],
+    attachments: []
   },
     {
-    id: "ctx-3", name: "Reunião de Alinhamento (Contexto)", priority: "Média", deadline: new Date(Date.now() + 0 * 24 * 60 * 60 * 1000).toISOString(), status: "pendente", createdAt: new Date().toISOString(), subtasks: [],
+    id: "ctx-3", name: "Reunião de Alinhamento (Contexto)", priority: "Média", deadline: new Date(Date.now() + 0 * 24 * 60 * 60 * 1000).toISOString(), status: "pendente", createdAt: new Date().toISOString(), subtasks: [], attachments: [],
     description: "Reunião com a equipe para alinhar próximos passos do projeto X (Contexto)."
   },
 ];
@@ -39,7 +40,7 @@ const LOCAL_STORAGE_KEY = "xmanager-tasks";
 
 interface TaskContextType {
   tasks: Task[];
-  addTask: (taskData: Omit<Task, "id" | "createdAt" | "subtasks" | "attachments">) => void;
+  addTask: (taskData: Omit<Task, "id" | "createdAt">) => void;
   editTask: (taskData: Task) => void;
   deleteTask: (taskId: string) => void;
   toggleTaskStatus: (taskId: string, currentStatus: TaskStatus) => void;
@@ -47,6 +48,8 @@ interface TaskContextType {
   editSubtask: (parentId: string, subtaskData: Subtask) => void;
   deleteSubtask: (parentId: string, subtaskId: string) => void;
   getTaskById: (taskId: string) => Task | undefined;
+  addAttachment: (taskId: string, file: File) => void;
+  removeAttachment: (taskId: string, attachmentId: string) => void;
   isLoadingTasks: boolean;
 }
 
@@ -62,13 +65,27 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     try {
       const storedTasks = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (storedTasks) {
-        setTasks(JSON.parse(storedTasks));
+        // Ensure all tasks have attachments array
+        const parsedTasks = JSON.parse(storedTasks).map((task: Task) => ({
+            ...task,
+            attachments: task.attachments || [],
+            subtasks: (task.subtasks || []).map(sub => ({...sub, attachments: sub.attachments || []}))
+        }));
+        setTasks(parsedTasks);
       } else {
-        setTasks(initialTasksData); 
+        setTasks(initialTasksData.map(task => ({
+            ...task, 
+            attachments: task.attachments || [],
+            subtasks: (task.subtasks || []).map(sub => ({...sub, attachments: sub.attachments || []}))
+        }))); 
       }
     } catch (error) {
       console.error("Failed to load tasks from localStorage:", error);
-      setTasks(initialTasksData); 
+      setTasks(initialTasksData.map(task => ({
+        ...task, 
+        attachments: task.attachments || [],
+        subtasks: (task.subtasks || []).map(sub => ({...sub, attachments: sub.attachments || []}))
+    }))); 
     }
     setIsLoadingTasks(false);
     setIsInitialLoadComplete(true);
@@ -84,20 +101,20 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [tasks, isInitialLoadComplete, isLoadingTasks]);
 
-  const addTask = useCallback((taskData: Omit<Task, "id" | "createdAt" | "subtasks" | "attachments">) => {
+  const addTask = useCallback((taskData: Omit<Task, "id" | "createdAt">) => {
     const newTask: Task = {
       ...taskData,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       status: taskData.status || "pendente",
-      subtasks: [],
-      attachments: [],
+      subtasks: taskData.subtasks || [],
+      attachments: taskData.attachments || [], 
     };
     setTasks(prevTasks => [newTask, ...prevTasks]);
   }, []);
 
   const editTask = useCallback((taskData: Task) => {
-    setTasks(prevTasks => prevTasks.map(t => t.id === taskData.id ? { ...taskData } : t));
+    setTasks(prevTasks => prevTasks.map(t => t.id === taskData.id ? { ...taskData, attachments: taskData.attachments || [], subtasks: (taskData.subtasks || []).map(sub => ({...sub, attachments: sub.attachments || []})) } : t));
   }, []);
 
   const deleteTask = useCallback((taskId: string) => {
@@ -118,6 +135,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       status: subtaskData.status || "pendente",
+      attachments: subtaskData.attachments || [],
     };
     setTasks(prevTasks => prevTasks.map(t => t.id === parentId ? { ...t, subtasks: [...(t.subtasks || []), newSubtask] } : t));
   }, []);
@@ -125,7 +143,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const editSubtask = useCallback((parentId: string, subtaskData: Subtask) => {
     setTasks(prevTasks => prevTasks.map(t =>
       t.id === parentId
-        ? { ...t, subtasks: (t.subtasks || []).map(st => st.id === subtaskData.id ? subtaskData : st) }
+        ? { ...t, subtasks: (t.subtasks || []).map(st => st.id === subtaskData.id ? {...subtaskData, attachments: subtaskData.attachments || []} : st) }
         : t
     ));
   }, []);
@@ -134,6 +152,30 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prevTasks => prevTasks.map(t =>
       t.id === parentId
         ? { ...t, subtasks: (t.subtasks || []).filter(st => st.id !== subtaskId) }
+        : t
+    ));
+  }, []);
+
+  const addAttachment = useCallback((taskId: string, file: File) => {
+    const newAttachment: FileAttachment = {
+      id: crypto.randomUUID(),
+      name: file.name,
+      url: URL.createObjectURL(file), // Temporary URL for client-side preview
+      size: file.size,
+      type: file.type,
+      file: file // Store the original file if needed for actual upload later
+    };
+    setTasks(prevTasks => prevTasks.map(t => 
+      t.id === taskId 
+        ? { ...t, attachments: [...(t.attachments || []), newAttachment] } 
+        : t
+    ));
+  }, []);
+
+  const removeAttachment = useCallback((taskId: string, attachmentId: string) => {
+    setTasks(prevTasks => prevTasks.map(t =>
+      t.id === taskId
+        ? { ...t, attachments: (t.attachments || []).filter(att => att.id !== attachmentId) }
         : t
     ));
   }, []);
@@ -153,6 +195,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       editSubtask,
       deleteSubtask,
       getTaskById,
+      addAttachment,
+      removeAttachment,
       isLoadingTasks,
     }}>
       {children}
@@ -167,5 +211,3 @@ export const useTasks = () => {
   }
   return context;
 };
-
-    

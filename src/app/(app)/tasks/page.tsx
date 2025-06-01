@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Task, Subtask, Priority, TaskStatus } from "@/lib/types";
+import type { Task, Subtask, Priority, TaskStatus, FileAttachment } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskForm } from "@/components/tasks/TaskForm";
@@ -48,11 +48,17 @@ export default function TasksPage() {
   });
 
 
-  const handleSaveTask = (taskData: Omit<Task, "id" | "createdAt" | "subtasks" | "attachments"> | Task) => {
+  const handleSaveTask = (taskData: Omit<Task, "id" | "createdAt"> | Task) => {
     if ("id" in taskData && taskData.id) { 
       editTask(taskData as Task);
     } else { 
-      addTask(taskData as Omit<Task, "id" | "createdAt" | "subtasks" | "attachments">);
+      // Ensure subtasks and attachments are initialized if not present for new tasks
+      const newTaskData = {
+        ...taskData,
+        subtasks: taskData.subtasks || [],
+        attachments: taskData.attachments || [],
+      } as Omit<Task, "id" | "createdAt">;
+      addTask(newTaskData);
     }
     setIsFormOpen(false);
     setEditingTask(null);
@@ -187,5 +193,3 @@ export default function TasksPage() {
     </div>
   );
 }
-
-    

@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Task, Subtask, Priority, TaskStatus, FileAttachment } from "@/lib/types";
@@ -5,15 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Edit2, Trash2, MoreVertical, CheckCircle, Circle, Zap, Paperclip, FileText, Plus, X } from "lucide-react";
+import { Edit2, Trash2, MoreVertical, CheckCircle, Circle, Zap, Paperclip, FileText, Plus, X, XCircle } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState } from "react";
-import { SubtaskForm } from "./SubtaskForm"; // Assuming SubtaskForm exists
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { SubtaskForm } from "./SubtaskForm"; 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileUploadPlaceholder } from "../shared/FileUploadPlaceholder";
 import { Progress } from "@/components/ui/progress";
 import Image from 'next/image';
+import { useTasks } from "@/contexts/TaskContext"; // Import useTasks
 
 interface TaskItemProps {
   task: Task;
@@ -28,6 +30,7 @@ interface TaskItemProps {
 export function TaskItem({ task, onEdit, onDelete, onToggleStatus, onAddSubtask, onDeleteSubtask, onEditSubtask }: TaskItemProps) {
   const [isSubtaskFormOpen, setIsSubtaskFormOpen] = useState(false);
   const [editingSubtask, setEditingSubtask] = useState<Subtask | null>(null);
+  const { addAttachment, removeAttachment } = useTasks(); // Get attachment functions from context
 
   const getPriorityClass = (priority: Priority) => {
     switch (priority) {
@@ -42,6 +45,18 @@ export function TaskItem({ task, onEdit, onDelete, onToggleStatus, onAddSubtask,
     if (status === "concluída") return <CheckCircle className="h-5 w-5 text-green-500" />;
     if (status === "em-progresso") return <Zap className="h-5 w-5 text-blue-500 animate-pulse" />;
     return <Circle className="h-5 w-5 text-muted-foreground" />;
+  };
+
+  const handleFileUploadToTask = (file: File) => {
+    addAttachment(task.id, file);
+  };
+
+  const handleRemoveAttachmentFromTask = (attachmentId: string) => {
+    const attachmentToRemove = task.attachments.find(att => att.id === attachmentId);
+    if (attachmentToRemove && attachmentToRemove.url.startsWith('blob:')) {
+      URL.revokeObjectURL(attachmentToRemove.url); // Clean up blob URL
+    }
+    removeAttachment(task.id, attachmentId);
   };
 
   const handleSaveSubtask = (subtaskData: Omit<Subtask, "id" | "createdAt"> | Subtask) => {
@@ -109,20 +124,32 @@ export function TaskItem({ task, onEdit, onDelete, onToggleStatus, onAddSubtask,
           </span>
         </div>
         
-        {task.attachments && task.attachments.length > 0 && (
+        {(task.attachments && task.attachments.length > 0) && (
           <div>
             <h4 className="text-xs font-semibold text-muted-foreground mb-1">Anexos:</h4>
             <div className="flex flex-wrap gap-2">
-              {task.attachments.map(file => (
-                <a key={file.id} href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs bg-muted hover:bg-muted/80 text-muted-foreground px-2 py-1 rounded-md flex items-center gap-1 transition-colors">
-                  <Paperclip className="h-3 w-3"/> {file.name}
-                </a>
+              {task.attachments.map(fileAtt => (
+                <div key={fileAtt.id} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-md flex items-center gap-1 group relative">
+                  <Paperclip className="h-3 w-3"/> 
+                  <a href={fileAtt.url} target="_blank" rel="noopener noreferrer" className="hover:underline" title={fileAtt.name}>
+                    {fileAtt.name.length > 20 ? `${fileAtt.name.substring(0,17)}...` : fileAtt.name}
+                  </a>
+                  <span className="text-xs opacity-70"> ({(fileAtt.size / 1024).toFixed(1)} KB)</span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-5 w-5 text-destructive opacity-50 group-hover:opacity-100 absolute -top-2 -right-2 bg-muted hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5"
+                    onClick={() => handleRemoveAttachmentFromTask(fileAtt.id)}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               ))}
             </div>
           </div>
         )}
-         <div className="pt-2"> {/* Placeholder for adding attachments */}
-            <FileUploadPlaceholder onFileUpload={(file) => console.log("File to upload:", file.name)} small />
+         <div className="pt-2">
+            <FileUploadPlaceholder onFileUpload={handleFileUploadToTask} small />
         </div>
 
 

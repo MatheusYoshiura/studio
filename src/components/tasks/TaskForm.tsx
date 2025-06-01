@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,16 +18,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Task, Priority, TaskStatus } from "@/lib/types";
-import { CalendarIcon, Save } from "lucide-react";
+import type { Task, Priority, TaskStatus, FileAttachment } from "@/lib/types";
+import { CalendarIcon, Save, Paperclip, XCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { FileUploadPlaceholder } from "../shared/FileUploadPlaceholder";
+import { useState, useEffect } from "react";
 
 const priorities: Priority[] = ["Alta", "Média", "Baixa"];
 const statuses: TaskStatus[] = ["pendente", "em-progresso", "concluída"];
 
+// Form schema does not include attachments directly as they are managed separately
 const formSchema = z.object({
   name: z.string().min(1, { message: "Nome da tarefa é obrigatório." }),
   priority: z.enum(priorities, { required_error: "Prioridade é obrigatória." }),
@@ -38,12 +41,22 @@ const formSchema = z.object({
 type TaskFormValues = z.infer<typeof formSchema>;
 
 interface TaskFormProps {
-  onSave: (data: Omit<Task, "id" | "createdAt" | "subtasks" | "attachments"> | Task) => void;
+  onSave: (data: Omit<Task, "id" | "createdAt" | "subtasks"> | Task) => void; // attachments will be part of data
   initialData?: Task | null;
   onClose: () => void;
 }
 
 export function TaskForm({ onSave, initialData, onClose }: TaskFormProps) {
+  const [currentAttachments, setCurrentAttachments] = useState<FileAttachment[]>([]);
+
+  useEffect(() => {
+    if (initialData?.attachments) {
+      setCurrentAttachments(initialData.attachments);
+    } else {
+      setCurrentAttachments([]);
+    }
+  }, [initialData]);
+
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData
@@ -63,17 +76,45 @@ export function TaskForm({ onSave, initialData, onClose }: TaskFormProps) {
         },
   });
 
+  const handleFileUpload = (file: File) => {
+    const newAttachment: FileAttachment = {
+      id: crypto.randomUUID(),
+      name: file.name,
+      url: URL.createObjectURL(file), // Temporary client-side URL
+      size: file.size,
+      type: file.type,
+      file: file // Store original file if needed later
+    };
+    setCurrentAttachments(prev => [...prev, newAttachment]);
+  };
+
+  const handleRemoveAttachment = (attachmentId: string) => {
+    const attachmentToRemove = currentAttachments.find(att => att.id === attachmentId);
+    if (attachmentToRemove && attachmentToRemove.url.startsWith('blob:')) {
+      URL.revokeObjectURL(attachmentToRemove.url); // Clean up blob URL
+    }
+    setCurrentAttachments(prev => prev.filter(att => att.id !== attachmentId));
+  };
+
   function onSubmit(values: TaskFormValues) {
     const taskDataToSave = {
       ...values,
       deadline: values.deadline.toISOString(),
-      status: values.status || "pendente", // Ensure status is set
+      status: values.status || "pendente", 
+      attachments: currentAttachments, // Add current attachments to the task data
+      // subtasks are not managed by this form directly, should be preserved if editing
+      subtasks: initialData?.subtasks || [], 
     };
     
     if (initialData) {
       onSave({ ...initialData, ...taskDataToSave });
     } else {
-      onSave(taskDataToSave as Omit<Task, "id" | "createdAt" | "subtasks" | "attachments">);
+      // For new tasks, ensure subtasks is an empty array if not provided
+      const finalNewTaskData = {
+        ...taskDataToSave,
+        subtasks: taskDataToSave.subtasks || [],
+      }
+      onSave(finalNewTaskData as Omit<Task, "id" | "createdAt">);
     }
   }
 
@@ -146,7 +187,7 @@ export function TaskForm({ onSave, initialData, onClose }: TaskFormProps) {
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) } // Disable past dates
+                      disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) } 
                       initialFocus
                     />
                   </PopoverContent>
@@ -157,7 +198,7 @@ export function TaskForm({ onSave, initialData, onClose }: TaskFormProps) {
           />
         </div>
         
-        {initialData && ( // Show status field only when editing
+        {initialData && ( 
           <FormField
             control={form.control}
             name="status"
@@ -199,9 +240,29 @@ export function TaskForm({ onSave, initialData, onClose }: TaskFormProps) {
         />
         
         <div>
-          <FormLabel>Anexos (Opcional)</FormLabel>
-          <FileUploadPlaceholder onFileUpload={(file) => console.log("File selected:", file.name)} />
-          {/* Display existing attachments if any (for edit mode) */}
+          <FormLabel>Anexos</FormLabel>
+          <FileUploadPlaceholder onFileUpload={handleFileUpload} />
+          {currentAttachments.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <h4 className="text-xs font-semibold text-muted-foreground">Arquivos selecionados:</h4>
+              <ul className="space-y-1">
+                {currentAttachments.map(att => (
+                  <li key={att.id} className="flex items-center justify-between text-sm p-2 bg-muted rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                      <a href={att.url} target="_blank" rel="noopener noreferrer" className="hover:underline" title={att.name}>
+                        {att.name.length > 30 ? `${att.name.substring(0,27)}...` : att.name}
+                      </a>
+                       <span className="text-xs text-muted-foreground">({(att.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveAttachment(att.id)}>
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 pt-4">

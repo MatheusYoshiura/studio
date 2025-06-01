@@ -1,12 +1,14 @@
+
 export type Priority = "Alta" | "Média" | "Baixa";
 export type TaskStatus = "pendente" | "em-progresso" | "concluída";
 
 export interface FileAttachment {
   id: string;
   name: string;
-  url: string; // Placeholder for file URL
-  size: number; // In bytes
-  type: string; // Mime type
+  url: string; 
+  size: number; 
+  type: string; 
+  file?: File; // Optional: Store the original File object if needed, e.g., for re-upload
 }
 
 export interface Subtask {
@@ -30,7 +32,7 @@ export interface Task {
   status: TaskStatus;
   createdAt: string; // ISO date string
   subtasks: Subtask[];
-  attachments?: FileAttachment[];
+  attachments: FileAttachment[]; // Changed to non-optional, will default to []
 }
 
 export interface ProductivityReportParams {
