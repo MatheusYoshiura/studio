@@ -131,7 +131,7 @@ export default function AppHeader() {
                  <UserCircle className="mr-2 h-4 w-4" /> Perfil
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>Suporte</DropdownMenuItem>
+            
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
               Sair
