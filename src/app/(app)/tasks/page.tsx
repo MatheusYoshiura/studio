@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Task, Subtask, Priority, TaskStatus, FileAttachment } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { TaskList } from "@/components/tasks/TaskList";
@@ -33,6 +34,9 @@ export default function TasksPage() {
     isLoadingTasks, 
   } = useTasks();
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,6 +50,16 @@ export default function TasksPage() {
     Média: true,
     Baixa: true,
   });
+
+  useEffect(() => {
+    if (searchParams.get("openNewTask") === "true") {
+      setEditingTask(null); // Ensure we are not editing
+      setIsFormOpen(true);
+      // Clean the URL
+      const newPath = window.location.pathname; // or "/tasks"
+      router.replace(newPath, undefined);
+    }
+  }, [searchParams, router]);
 
 
   const handleSaveTask = (taskData: Omit<Task, "id" | "createdAt"> | Task) => {

@@ -17,6 +17,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
       // ⌘ + K or Ctrl + K for Command Palette
       if ((event.metaKey || event.ctrlKey) && event.key === "k") {
         event.preventDefault();
@@ -25,37 +28,22 @@ export default function DashboardPage() {
       }
 
       // N for New Task
-      if (event.key.toLowerCase() === "n" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-         // Evitar acionar se estiver digitando em um input, textarea, etc.
-        const target = event.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-          return;
-        }
+      if (!isTyping && event.key.toLowerCase() === "n" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
         event.preventDefault();
         console.log("Atalho 'N' pressionado (Nova Tarefa)");
-        router.push("/tasks");
-        // Idealmente, você poderia passar um parâmetro para /tasks abrir o modal,
-        // ou usar um estado global para controlar a abertura do modal de nova tarefa.
+        router.push("/tasks?openNewTask=true");
       }
 
       // S for Search
-      if (event.key.toLowerCase() === "s" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-         const target = event.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-          return;
-        }
+      if (!isTyping && event.key.toLowerCase() === "s" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
         event.preventDefault();
         console.log("Atalho 'S' pressionado (Buscar)");
-        router.push("/tasks");
-        // Idealmente, navegaria para /tasks e focaria no campo de busca.
+        router.push("/tasks"); 
+        // Idealmente, focaria no campo de busca em /tasks.
       }
       
       // ? for Help
-      if (event.key === "?" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-         const target = event.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-          return;
-        }
+      if (!isTyping && event.key === "?" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
         event.preventDefault();
         console.log("Atalho '?' pressionado (Ajuda - Placeholder)");
         // Aqui você adicionaria a lógica para mostrar ajuda
