@@ -3,7 +3,7 @@
 
 import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
 import { UpcomingTasks } from "@/components/dashboard/UpcomingTasks";
-import { ProductivityReportSection } from "@/components/dashboard/ProductivityReportSection";
+// import { ProductivityReportSection } from "@/components/dashboard/ProductivityReportSection"; // Removed
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Lightbulb, Zap, Loader2 } from "lucide-react";
@@ -59,7 +59,7 @@ export default function DashboardPage() {
       
       <Separator />
 
-      <ProductivityReportSection />
+      {/* <ProductivityReportSection /> Removed */}
 
       <Card className="shadow-lg">
         <CardHeader>
@@ -92,5 +92,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

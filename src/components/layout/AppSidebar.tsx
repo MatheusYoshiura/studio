@@ -1,6 +1,7 @@
+
 "use client";
 
-import * as React from "react";
+import React from "react"; // Added import for React
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -15,14 +16,14 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, ListChecks, CalendarDays, Settings, LogOut, BarChart3, UserCircle } from "lucide-react";
+import { LayoutDashboard, ListChecks, CalendarDays, Settings, LogOut, /* BarChart3, */ UserCircle } from "lucide-react"; // Removed BarChart3
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "Tarefas", icon: ListChecks },
   { href: "/schedule", label: "Cronograma", icon: CalendarDays },
-  { href: "/reports", label: "Relatórios", icon: BarChart3 }, // Placeholder for productivity reports page
+  // { href: "/reports", label: "Relatórios", icon: BarChart3 }, // Removed
 ];
 
 export default function AppSidebar() {
@@ -61,7 +62,7 @@ export default function AppSidebar() {
               <SidebarMenuSkeleton showIcon />
               <SidebarMenuSkeleton showIcon />
               <SidebarMenuSkeleton showIcon />
-              <SidebarMenuSkeleton showIcon />
+              {/* Removed one skeleton item to match navItems length */}
             </>
           ) : (
             navItems.map((item) => (

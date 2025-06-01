@@ -35,8 +35,9 @@ export interface Task {
   attachments: FileAttachment[]; // Changed to non-optional, will default to []
 }
 
-export interface ProductivityReportParams {
-  userId: string; // Mocked, will be from auth
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
-}
+// Removed ProductivityReportParams
+// export interface ProductivityReportParams {
+//   userId: string; // Mocked, will be from auth
+//   startDate: string; // YYYY-MM-DD
+//   endDate: string; // YYYY-MM-DD
+// }
