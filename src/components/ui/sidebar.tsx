@@ -650,10 +650,14 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+  const [skeletonWidth, setSkeletonWidth] = React.useState<string | null>(
+    null
+  );
+
+  React.useEffect(() => {
+    // Generate random width only on the client side after mount
+    setSkeletonWidth(`${Math.floor(Math.random() * 40) + 50}%`);
+  }, []); // Empty dependency array ensures this runs once on mount
 
   return (
     <div
@@ -672,9 +676,11 @@ const SidebarMenuSkeleton = React.forwardRef<
         className="h-4 flex-1 max-w-[--skeleton-width]"
         data-sidebar="menu-skeleton-text"
         style={
-          {
-            "--skeleton-width": width,
-          } as React.CSSProperties
+          skeletonWidth
+            ? ({
+                "--skeleton-width": skeletonWidth,
+              } as React.CSSProperties)
+            : undefined
         }
       />
     </div>

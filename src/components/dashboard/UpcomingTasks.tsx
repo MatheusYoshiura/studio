@@ -7,10 +7,45 @@ import Link from "next/link";
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ArrowRight, CalendarClock } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface UpcomingTasksProps {
   tasks: Partial<Task>[];
 }
+
+const TaskDateDisplay = ({ deadline }: { deadline: string | undefined }) => {
+  const [formattedDate, setFormattedDate] = useState<string>('');
+
+  useEffect(() => {
+    if (!deadline) {
+      setFormattedDate('N/A');
+      return;
+    }
+    // All date logic moved into useEffect to run client-side
+    const date = parseISO(deadline);
+    const now = new Date(); // Called on client after mount
+    const diff = differenceInDays(date, now);
+    let result = '';
+
+    if (diff < 0) {
+      result = `Atrasada (${format(date, "dd MMM", { locale: ptBR })})`;
+    } else if (diff === 0) {
+      result = `Hoje (${format(date, "HH:mm", { locale: ptBR })})`;
+    } else if (diff === 1) {
+      result = `Amanhã (${format(date, "HH:mm", { locale: ptBR })})`;
+    } else {
+      result = format(date, "dd MMM, HH:mm", { locale: ptBR });
+    }
+    setFormattedDate(result);
+  }, [deadline]);
+
+  if (!formattedDate && deadline) {
+    return <span>Carregando...</span>;
+  }
+
+  return <span>{formattedDate}</span>;
+};
+
 
 export function UpcomingTasks({ tasks }: UpcomingTasksProps) {
   if (!tasks || tasks.length === 0) {
@@ -29,16 +64,6 @@ export function UpcomingTasks({ tasks }: UpcomingTasksProps) {
     }
   };
 
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'N/A';
-    const date = parseISO(dateString);
-    const diff = differenceInDays(date, new Date());
-    if (diff < 0) return `Atrasada (${format(date, "dd MMM", { locale: ptBR })})`;
-    if (diff === 0) return `Hoje (${format(date, "HH:mm", { locale: ptBR })})`;
-    if (diff === 1) return `Amanhã (${format(date, "HH:mm", { locale: ptBR })})`;
-    return format(date, "dd MMM, HH:mm", { locale: ptBR });
-  };
-
   return (
     <div className="space-y-4">
       {tasks.map((task) => (
@@ -47,7 +72,7 @@ export function UpcomingTasks({ tasks }: UpcomingTasksProps) {
             <h4 className="text-sm font-medium text-foreground">{task.name}</h4>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <CalendarClock className="w-3.5 h-3.5" />
-              <span>{formatDate(task.deadline)}</span>
+              <TaskDateDisplay deadline={task.deadline} />
               {task.priority && (
                 <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs px-1.5 py-0.5">
                   {task.priority}
