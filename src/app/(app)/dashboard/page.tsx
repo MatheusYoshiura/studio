@@ -7,7 +7,7 @@ import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
 import { UpcomingTasks } from "@/components/dashboard/UpcomingTasks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Lightbulb, Zap, Loader2 } from "lucide-react";
+import { Lightbulb, Zap, Loader2, CalendarDays } from "lucide-react";
 import { useTasks } from "@/contexts/TaskContext"; 
 
 
@@ -19,13 +19,6 @@ export default function DashboardPage() {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-
-      // ⌘ + K or Ctrl + K for Command Palette
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
-        event.preventDefault();
-        console.log("Atalho ⌘/Ctrl + K pressionado (Abrir Comando - Placeholder)");
-        // Aqui você adicionaria a lógica para abrir uma paleta de comandos
-      }
 
       // N for New Task
       if (!isTyping && event.key.toLowerCase() === "n" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
@@ -39,15 +32,15 @@ export default function DashboardPage() {
         event.preventDefault();
         console.log("Atalho 'S' pressionado (Buscar)");
         router.push("/tasks"); 
-        // Idealmente, focaria no campo de busca em /tasks.
+      }
+
+      // C for Schedule/Cronograma
+      if (!isTyping && event.key.toLowerCase() === "c" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+        event.preventDefault();
+        console.log("Atalho 'C' pressionado (Cronograma)");
+        router.push("/schedule");
       }
       
-      // ? for Help
-      if (!isTyping && event.key === "?" && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-        event.preventDefault();
-        console.log("Atalho '?' pressionado (Ajuda - Placeholder)");
-        // Aqui você adicionaria a lógica para mostrar ajuda
-      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -108,13 +101,7 @@ export default function DashboardPage() {
             <Zap className="text-primary w-6 h-6" /> Atalhos
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="flex flex-col items-center p-4 bg-card-foreground/5 rounded-lg hover:bg-card-foreground/10 transition-colors" title="Pressione ⌘ + K ou Ctrl + K">
-            <span className="text-2xl mb-1">⌘</span>
-            <span className="text-2xl mb-1">+</span>
-            <span className="text-2xl font-bold">K</span>
-            <p className="text-xs text-muted-foreground mt-1">Abrir comando</p>
-          </div>
+        <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
            <div className="flex flex-col items-center p-4 bg-card-foreground/5 rounded-lg hover:bg-card-foreground/10 transition-colors" title="Pressione N" data-ai-hint="open new task form">
             <span className="text-2xl mb-1">N</span>
             <p className="text-xs text-muted-foreground mt-1 pt-11">Nova Tarefa</p>
@@ -123,9 +110,9 @@ export default function DashboardPage() {
             <span className="text-2xl mb-1">S</span>
             <p className="text-xs text-muted-foreground mt-1 pt-11">Buscar</p>
           </div>
-           <div className="flex flex-col items-center p-4 bg-card-foreground/5 rounded-lg hover:bg-card-foreground/10 transition-colors" title="Pressione ?">
-            <span className="text-2xl mb-1">?</span>
-            <p className="text-xs text-muted-foreground mt-1 pt-11">Ajuda</p>
+           <div className="flex flex-col items-center p-4 bg-card-foreground/5 rounded-lg hover:bg-card-foreground/10 transition-colors" title="Pressione C" data-ai-hint="go to schedule page">
+            <span className="text-2xl mb-1">C</span>
+            <p className="text-xs text-muted-foreground mt-1 pt-11">Cronograma</p>
           </div>
         </CardContent>
       </Card>
