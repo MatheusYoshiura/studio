@@ -33,28 +33,37 @@ export default function AppHeader() {
   const [currentUser, setCurrentUser] = useState<StoredUser | null>(null);
 
   useEffect(() => {
-    const userEmail = localStorage.getItem(CURRENT_USER_EMAIL_KEY);
-    if (userEmail) {
-      const usersFromStorage = localStorage.getItem(USERS_STORAGE_KEY);
-      if (usersFromStorage) {
-        const allUsers: StoredUser[] = JSON.parse(usersFromStorage);
-        const foundUser = allUsers.find(u => u.email === userEmail);
-        if (foundUser) {
-          setCurrentUser(foundUser);
+    const fetchAndSetUser = () => {
+      const userEmail = localStorage.getItem(CURRENT_USER_EMAIL_KEY);
+      if (userEmail) {
+        const usersFromStorage = localStorage.getItem(USERS_STORAGE_KEY);
+        if (usersFromStorage) {
+          try {
+            const allUsers: StoredUser[] = JSON.parse(usersFromStorage);
+            const foundUser = allUsers.find(u => u.email === userEmail);
+            if (foundUser) {
+              setCurrentUser(foundUser);
+            } else {
+              setCurrentUser(null); // User email in current key, but not in users list
+            }
+          } catch (error) {
+            console.error("Error parsing users from storage in AppHeader:", error);
+            setCurrentUser(null);
+          }
+        } else {
+            setCurrentUser(null); // No users in storage
         }
+      } else {
+        setCurrentUser(null); // No current user email
       }
-    }
+    };
+
+    fetchAndSetUser(); // Initial fetch
+
     // Listen for storage changes to update avatar in header if changed on profile page
     const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === USERS_STORAGE_KEY && userEmail) {
-             const usersFromStorage = localStorage.getItem(USERS_STORAGE_KEY);
-             if (usersFromStorage) {
-                const allUsers: StoredUser[] = JSON.parse(usersFromStorage);
-                const updatedUser = allUsers.find(u => u.email === userEmail);
-                if (updatedUser) {
-                    setCurrentUser(updatedUser);
-                }
-             }
+        if (event.key === USERS_STORAGE_KEY || event.key === CURRENT_USER_EMAIL_KEY) {
+             fetchAndSetUser(); // Re-fetch user data if users or current user key changes
         }
     };
     window.addEventListener('storage', handleStorageChange);
@@ -70,11 +79,12 @@ export default function AppHeader() {
     router.push("/auth/login");
   };
   
-  const getInitials = (name: string = "") => {
+  const getInitials = (name: string | undefined) => {
+    if (!name) return "U"; // Default if name is undefined
     const names = name.split(' ');
     const firstInitial = names[0] ? names[0][0] : '';
     const lastInitial = names.length > 1 ? names[names.length - 1][0] : '';
-    return `${firstInitial}${lastInitial}`.toUpperCase() || "U";
+    return `${firstInitial}${lastInitial}`.toUpperCase() || "U"; // Ensure "U" if initials are empty
   }
 
 
@@ -98,7 +108,7 @@ export default function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="rounded-full p-0 h-8 w-8 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10">
                <Avatar className="h-8 w-8">
-                <AvatarImage src={currentUser?.avatarDataUrl || undefined} alt={currentUser?.name} />
+                <AvatarImage src={currentUser?.avatarDataUrl || undefined} alt={currentUser?.name || "User Avatar"} />
                 <AvatarFallback className="bg-primary/20 text-primary text-xs">
                   {currentUser ? getInitials(currentUser.name) : <UserCircle className="h-5 w-5" />}
                 </AvatarFallback>
@@ -132,5 +142,3 @@ export default function AppHeader() {
     </header>
   );
 }
-
-    
