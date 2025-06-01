@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { generateProductivityReportAction } from "./actions";
+import { generateProductivityReportAction } from "@/app/(app)/dashboard/actions";
 import type { GenerateProductivityReportOutput } from "@/ai/flows/productivity-report";
 import { Loader2, Download, BarChartBig } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -74,9 +74,9 @@ export function ProductivityReportSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="start-date">Data de Início</Label>
-            <Input 
-              id="start-date" 
-              type="date" 
+            <Input
+              id="start-date"
+              type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="mt-1"
@@ -84,9 +84,9 @@ export function ProductivityReportSection() {
           </div>
           <div>
             <Label htmlFor="end-date">Data de Fim</Label>
-            <Input 
-              id="end-date" 
-              type="date" 
+            <Input
+              id="end-date"
+              type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="mt-1"
@@ -101,9 +101,9 @@ export function ProductivityReportSection() {
           )}
           Gerar Relatório
         </Button>
-        
+
         {error && <p className="text-sm text-destructive">{error}</p>}
-        
+
         {report && (
           <div className="mt-4 space-y-2">
             <h3 className="text-lg font-semibold text-foreground">Seu Relatório:</h3>
@@ -111,7 +111,7 @@ export function ProductivityReportSection() {
               value={report.report}
               readOnly
               rows={10}
-              className="bg-background text-foreground border-border" 
+              className="bg-background text-foreground border-border"
             />
           </div>
         )}
