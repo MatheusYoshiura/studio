@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Task } from "@/lib/types";
-import { format, parseISO, isToday, isThisWeek, isThisMonth, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, parseISO, isToday, isThisWeek, isThisMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar, ListFilter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,14 @@ const mockTasks: Task[] = [
 
 
 const TaskCard = ({ task }: { task: Task }) => {
+  const [formattedDeadline, setFormattedDeadline] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (task.deadline) {
+      setFormattedDeadline(format(parseISO(task.deadline), "dd MMM, HH:mm", { locale: ptBR }));
+    }
+  }, [task.deadline]);
+
   const getPriorityBadgeVariant = (priority: string | undefined) => {
     switch (priority) {
       case "Alta": return "destructive";
@@ -48,7 +57,7 @@ const TaskCard = ({ task }: { task: Task }) => {
           <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs">{task.priority}</Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          Prazo: {format(parseISO(task.deadline), "dd MMM, HH:mm", { locale: ptBR })}
+          Prazo: {formattedDeadline || "Carregando..."}
         </p>
       </CardHeader>
       {task.description && (
@@ -74,10 +83,17 @@ const TasksForPeriod = ({ tasks, title }: { tasks: Task[]; title: string }) => (
 
 export default function SchedulePage() {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [todayTasks, setTodayTasks] = useState<Task[]>([]);
+  const [thisWeekTasks, setThisWeekTasks] = useState<Task[]>([]);
+  const [thisMonthTasks, setThisMonthTasks] = useState<Task[]>([]);
 
-  const todayTasks = tasks.filter(task => isToday(parseISO(task.deadline)));
-  const thisWeekTasks = tasks.filter(task => isThisWeek(parseISO(task.deadline), { weekStartsOn: 1 }));
-  const thisMonthTasks = tasks.filter(task => isThisMonth(parseISO(task.deadline)));
+  useEffect(() => {
+    // Defer filtering that depends on "now" to the client side
+    setTodayTasks(tasks.filter(task => isToday(parseISO(task.deadline))));
+    setThisWeekTasks(tasks.filter(task => isThisWeek(parseISO(task.deadline), { weekStartsOn: 1 })));
+    setThisMonthTasks(tasks.filter(task => isThisMonth(parseISO(task.deadline))));
+  }, [tasks]);
+
 
   return (
     <div className="space-y-6">
@@ -118,6 +134,7 @@ export default function SchedulePage() {
               width={600} 
               height={400}
               className="rounded-md shadow-md"
+              data-ai-hint="calendar schedule"
             />
           </div>
         </CardContent>
