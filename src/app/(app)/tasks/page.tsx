@@ -6,7 +6,7 @@ import type { Task, Subtask, Priority, TaskStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskForm } from "@/components/tasks/TaskForm";
-import { PlusCircle, Search, Filter } from "lucide-react";
+import { PlusCircle, Search, Filter, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,49 +16,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { useTasks } from "@/contexts/TaskContext";
 
-// Mock data for demonstration - used as a fallback
-const initialTasks: Task[] = [
-  {
-    id: "1",
-    name: "Desenvolver Landing Page",
-    priority: "Alta",
-    deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    description: "Criar a landing page principal com seções de features, pricing e CTA.",
-    status: "em-progresso",
-    createdAt: new Date().toISOString(),
-    subtasks: [
-      { id: "s1-1", name: "Definir paleta de cores", priority: "Alta", deadline: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), status: "concluída", createdAt: new Date().toISOString() },
-      { id: "s1-2", name: "Criar wireframes", priority: "Média", deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), status: "pendente", createdAt: new Date().toISOString() },
-    ],
-    attachments: [{ id: "f1", name: "briefing.pdf", url: "#", size: 102400, type: "application/pdf" }]
-  },
-  {
-    id: "2",
-    name: "Configurar Autenticação",
-    priority: "Alta",
-    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    status: "pendente",
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    subtasks: [],
-  },
-  {
-    id: "3",
-    name: "Escrever Documentação da API",
-    priority: "Média",
-    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    description: "Documentar todos os endpoints da API para o time de frontend.",
-    status: "pendente",
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    subtasks: [],
-  },
-];
-
-const LOCAL_STORAGE_KEY = "xmanager-tasks";
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const {
+    tasks,
+    addTask,
+    editTask,
+    deleteTask,
+    toggleTaskStatus,
+    addSubtask,
+    editSubtask,
+    deleteSubtask,
+    isLoadingTasks, 
+  } = useTasks();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,106 +46,61 @@ export default function TasksPage() {
     Média: true,
     Baixa: true,
   });
-  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
-
-  // Load tasks from localStorage on component mount
-  useEffect(() => {
-    try {
-      const storedTasks = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedTasks) {
-        setTasks(JSON.parse(storedTasks));
-      } else {
-        setTasks(initialTasks); // Fallback to mock data if nothing in localStorage
-      }
-    } catch (error) {
-      console.error("Failed to load tasks from localStorage:", error);
-      setTasks(initialTasks); // Fallback on error
-    }
-    setIsInitialLoadComplete(true);
-  }, []);
-
-  // Save tasks to localStorage whenever they change, after initial load
-  useEffect(() => {
-    if (isInitialLoadComplete) {
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
-      } catch (error) {
-        console.error("Failed to save tasks to localStorage:", error);
-      }
-    }
-  }, [tasks, isInitialLoadComplete]);
 
 
   const handleSaveTask = (taskData: Omit<Task, "id" | "createdAt" | "subtasks" | "attachments"> | Task) => {
-    if ("id" in taskData && taskData.id) { // Editing existing task
-      setTasks(prevTasks => prevTasks.map(t => t.id === taskData.id ? { ...t, ...taskData } : t));
-    } else { // Adding new task
-      const newTask: Task = {
-        ...taskData,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        status: taskData.status || "pendente", // Default status if not provided
-        subtasks: [],
-        attachments: [],
-      };
-      setTasks(prevTasks => [newTask, ...prevTasks]);
+    if ("id" in taskData && taskData.id) { 
+      editTask(taskData as Task);
+    } else { 
+      addTask(taskData as Omit<Task, "id" | "createdAt" | "subtasks" | "attachments">);
     }
     setIsFormOpen(false);
     setEditingTask(null);
   };
 
-  const handleEditTask = (task: Task) => {
+  const handleEditTaskClick = (task: Task) => {
     setEditingTask(task);
     setIsFormOpen(true);
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(t => t.id !== taskId));
+  
+  const handleDeleteTaskClick = (taskId: string) => {
+    deleteTask(taskId);
   };
 
-  const handleToggleTaskStatus = (taskId: string, currentStatus: TaskStatus) => {
-    let nextStatus: TaskStatus;
-    if (currentStatus === "pendente") nextStatus = "em-progresso";
-    else if (currentStatus === "em-progresso") nextStatus = "concluída";
-    else nextStatus = "pendente";
-    setTasks(prevTasks => prevTasks.map(t => t.id === taskId ? { ...t, status: nextStatus } : t));
+  const handleToggleTaskStatusClick = (taskId: string, currentStatus: TaskStatus) => {
+    toggleTaskStatus(taskId, currentStatus);
   };
   
-  const handleAddSubtask = (parentId: string, subtaskData: Omit<Subtask, "id" | "createdAt">) => {
-    const newSubtask: Subtask = {
-      ...subtaskData,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      status: subtaskData.status || "pendente",
-    };
-    setTasks(prevTasks => prevTasks.map(t => t.id === parentId ? { ...t, subtasks: [...(t.subtasks || []), newSubtask] } : t));
+  const handleAddSubtaskClick = (parentId: string, subtaskData: Omit<Subtask, "id" | "createdAt">) => {
+    addSubtask(parentId, subtaskData);
   };
 
-  const handleDeleteSubtask = (parentId: string, subtaskId: string) => {
-    setTasks(prevTasks => prevTasks.map(t => 
-      t.id === parentId 
-        ? { ...t, subtasks: (t.subtasks || []).filter(st => st.id !== subtaskId) } 
-        : t
-    ));
+  const handleDeleteSubtaskClick = (parentId: string, subtaskId: string) => {
+    deleteSubtask(parentId, subtaskId);
   };
 
-  const handleEditSubtask = (parentId: string, subtaskData: Subtask) => {
-     setTasks(prevTasks => prevTasks.map(t => 
-      t.id === parentId 
-        ? { ...t, subtasks: (t.subtasks || []).map(st => st.id === subtaskData.id ? subtaskData : st) } 
-        : t
-    ));
+  const handleEditSubtaskClick = (parentId: string, subtaskData: Subtask) => {
+     editSubtask(parentId, subtaskData);
   };
 
   const filteredTasks = tasks.filter(task => {
     const searchMatch = task.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const statusMatch = statusFilter[task.status];
-    // Handle case where task.priority might not be in priorityFilter (e.g. if types change or data is inconsistent)
+    
     const priorityMatch = task.priority ? priorityFilter[task.priority] : true;
     return searchMatch && statusMatch && priorityMatch;
   });
   
+  if (isLoadingTasks) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
+        <span className="text-lg text-muted-foreground">Carregando tarefas...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -226,7 +155,7 @@ export default function TasksPage() {
                   setStatusFilter(prev => ({ ...prev, [statusKey]: Boolean(checked) }))
                 }
               >
-                {statusKey.charAt(0).toUpperCase() + statusKey.slice(1)}
+                {statusKey.charAt(0).toUpperCase() + statusKey.slice(1).replace("-"," ")}
               </DropdownMenuCheckboxItem>
             ))}
             <DropdownMenuLabel className="mt-2">Prioridade</DropdownMenuLabel>
@@ -248,12 +177,12 @@ export default function TasksPage() {
 
       <TaskList
         tasks={filteredTasks}
-        onEditTask={handleEditTask}
-        onDeleteTask={handleDeleteTask}
-        onToggleTaskStatus={handleToggleTaskStatus}
-        onAddSubtask={handleAddSubtask}
-        onDeleteSubtask={handleDeleteSubtask}
-        onEditSubtask={handleEditSubtask}
+        onEditTask={handleEditTaskClick} 
+        onDeleteTask={handleDeleteTaskClick} 
+        onToggleTaskStatus={handleToggleTaskStatusClick} 
+        onAddSubtask={handleAddSubtaskClick} 
+        onDeleteSubtask={handleDeleteSubtaskClick} 
+        onEditSubtask={handleEditSubtaskClick} 
       />
     </div>
   );

@@ -7,30 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Task } from "@/lib/types";
 import { format, parseISO, isToday, isThisWeek, isThisMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, ListFilter } from "lucide-react";
+import { Calendar, ListFilter, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import Image from 'next/image'; // For placeholder image
-
-// Mock data, same as tasks page for consistency
-const mockTasks: Task[] = [
-   {
-    id: "1", name: "Desenvolver Landing Page", priority: "Alta", deadline: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), status: "em-progresso", createdAt: new Date().toISOString(), subtasks: [],
-    description: "Finalizar o desenvolvimento da landing page com todos os CTAs."
-  },
-  {
-    id: "2", name: "Reunião de Alinhamento", priority: "Média", deadline: new Date().toISOString(), status: "pendente", createdAt: new Date().toISOString(), subtasks: [],
-    description: "Reunião com a equipe para alinhar próximos passos do projeto X."
-  },
-  {
-    id: "3", name: "Testar API de Pagamentos", priority: "Alta", deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), status: "pendente", createdAt: new Date().toISOString(), subtasks: [],
-  },
-  {
-    id: "4", name: "Planejar Sprint Q3", priority: "Média", deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), status: "pendente", createdAt: new Date().toISOString(), subtasks: [],
-  },
-   {
-    id: "5", name: "Corrigir Bugs da v1.2", priority: "Baixa", deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), status: "concluída", createdAt: new Date().toISOString(), subtasks: [],
-  },
-];
+import Image from 'next/image'; 
+import { useTasks } from "@/contexts/TaskContext"; 
 
 
 const TaskCard = ({ task }: { task: Task }) => {
@@ -82,18 +62,30 @@ const TasksForPeriod = ({ tasks, title }: { tasks: Task[]; title: string }) => (
 
 
 export default function SchedulePage() {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const { tasks, isLoadingTasks } = useTasks(); 
+  
   const [todayTasks, setTodayTasks] = useState<Task[]>([]);
   const [thisWeekTasks, setThisWeekTasks] = useState<Task[]>([]);
   const [thisMonthTasks, setThisMonthTasks] = useState<Task[]>([]);
 
   useEffect(() => {
-    // Defer filtering that depends on "now" to the client side
-    setTodayTasks(tasks.filter(task => isToday(parseISO(task.deadline))));
-    setThisWeekTasks(tasks.filter(task => isThisWeek(parseISO(task.deadline), { weekStartsOn: 1 })));
-    setThisMonthTasks(tasks.filter(task => isThisMonth(parseISO(task.deadline))));
-  }, [tasks]);
+    
+    if (!isLoadingTasks && tasks) { 
+        
+        setTodayTasks(tasks.filter(task => task.deadline && isToday(parseISO(task.deadline))));
+        setThisWeekTasks(tasks.filter(task => task.deadline && isThisWeek(parseISO(task.deadline), { weekStartsOn: 1 })));
+        setThisMonthTasks(tasks.filter(task => task.deadline && isThisMonth(parseISO(task.deadline))));
+    }
+  }, [tasks, isLoadingTasks]);
 
+  if (isLoadingTasks) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
+        <span className="text-lg text-muted-foreground">Carregando cronograma...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -101,7 +93,7 @@ export default function SchedulePage() {
         <h1 className="text-3xl font-headline font-semibold text-foreground flex items-center">
           <Calendar className="mr-3 h-8 w-8 text-primary" /> Cronograma
         </h1>
-        {/* Add filters or view switchers here if needed */}
+        
       </div>
 
       <Tabs defaultValue="hoje" className="w-full">
@@ -142,3 +134,5 @@ export default function SchedulePage() {
     </div>
   );
 }
+
+    

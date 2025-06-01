@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Task } from "@/lib/types";
@@ -10,7 +11,7 @@ import { ArrowRight, CalendarClock } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface UpcomingTasksProps {
-  tasks: Partial<Task>[];
+  tasks: Task[]; 
 }
 
 const TaskDateDisplay = ({ deadline }: { deadline: string | undefined }) => {
@@ -21,9 +22,9 @@ const TaskDateDisplay = ({ deadline }: { deadline: string | undefined }) => {
       setFormattedDate('N/A');
       return;
     }
-    // All date logic moved into useEffect to run client-side
+    
     const date = parseISO(deadline);
-    const now = new Date(); // Called on client after mount
+    const now = new Date(); 
     const diff = differenceInDays(date, now);
     let result = '';
 
@@ -93,3 +94,5 @@ export function UpcomingTasks({ tasks }: UpcomingTasksProps) {
     </div>
   );
 }
+
+    

@@ -1,25 +1,37 @@
+
+"use client"; 
+
 import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
 import { UpcomingTasks } from "@/components/dashboard/UpcomingTasks";
 import { ProductivityReportSection } from "@/components/dashboard/ProductivityReportSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Lightbulb, Zap } from "lucide-react";
-
-// Mock data for demonstration
-const mockTasks = [
-  { id: "1", name: "Finalizar relatório trimestral", deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), priority: "Alta", status: "em-progresso" },
-  { id: "2", name: "Preparar apresentação para cliente", deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), priority: "Alta", status: "pendente" },
-  { id: "3", name: "Revisar design do novo site", deadline: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), priority: "Média", status: "pendente" },
-  { id: "4", name: "Agendar reunião de equipe", deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), priority: "Baixa", status: "concluída" },
-];
+import { Lightbulb, Zap, Loader2 } from "lucide-react";
+import { useTasks } from "@/contexts/TaskContext"; 
 
 
 export default function DashboardPage() {
+  const { tasks, isLoadingTasks } = useTasks(); 
+
+  if (isLoadingTasks) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
+        <span className="text-lg text-muted-foreground">Carregando dashboard...</span>
+      </div>
+    );
+  }
+
+  const upcomingTasksData = tasks
+    .filter(t => t.status !== 'concluída' && t.deadline) 
+    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime()) 
+    .slice(0, 3);
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-headline font-semibold text-foreground">Dashboard</h1>
       
-      <DashboardMetrics tasks={mockTasks} />
+      <DashboardMetrics tasks={tasks} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 shadow-lg">
@@ -27,7 +39,7 @@ export default function DashboardPage() {
             <CardTitle className="font-headline text-xl">Próximas Tarefas</CardTitle>
           </CardHeader>
           <CardContent>
-            <UpcomingTasks tasks={mockTasks.filter(t => t.status !== 'concluída').slice(0, 3)} />
+            <UpcomingTasks tasks={upcomingTasksData} />
           </CardContent>
         </Card>
 
@@ -80,3 +92,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

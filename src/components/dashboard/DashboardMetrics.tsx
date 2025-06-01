@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Task } from "@/lib/types";
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, ListTodo, AlertTriangle, Hourglass } from "lucide-react";
 
 interface DashboardMetricsProps {
-  tasks: Partial<Task>[]; // Using partial as we only need status and deadline
+  tasks: Task[]; 
 }
 
 export function DashboardMetrics({ tasks }: DashboardMetricsProps) {
@@ -38,3 +39,5 @@ export function DashboardMetrics({ tasks }: DashboardMetricsProps) {
     </div>
   );
 }
+
+    
