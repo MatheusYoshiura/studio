@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -17,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-// Mock data for demonstration
+// Mock data for demonstration - used as a fallback
 const initialTasks: Task[] = [
   {
     id: "1",
@@ -54,8 +55,10 @@ const initialTasks: Task[] = [
   },
 ];
 
+const LOCAL_STORAGE_KEY = "xmanager-tasks";
+
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,10 +72,39 @@ export default function TasksPage() {
     Média: true,
     Baixa: true,
   });
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+
+  // Load tasks from localStorage on component mount
+  useEffect(() => {
+    try {
+      const storedTasks = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (storedTasks) {
+        setTasks(JSON.parse(storedTasks));
+      } else {
+        setTasks(initialTasks); // Fallback to mock data if nothing in localStorage
+      }
+    } catch (error) {
+      console.error("Failed to load tasks from localStorage:", error);
+      setTasks(initialTasks); // Fallback on error
+    }
+    setIsInitialLoadComplete(true);
+  }, []);
+
+  // Save tasks to localStorage whenever they change, after initial load
+  useEffect(() => {
+    if (isInitialLoadComplete) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
+      } catch (error) {
+        console.error("Failed to save tasks to localStorage:", error);
+      }
+    }
+  }, [tasks, isInitialLoadComplete]);
+
 
   const handleSaveTask = (taskData: Omit<Task, "id" | "createdAt" | "subtasks" | "attachments"> | Task) => {
     if ("id" in taskData && taskData.id) { // Editing existing task
-      setTasks(tasks.map(t => t.id === taskData.id ? { ...t, ...taskData } : t));
+      setTasks(prevTasks => prevTasks.map(t => t.id === taskData.id ? { ...t, ...taskData } : t));
     } else { // Adding new task
       const newTask: Task = {
         ...taskData,
@@ -82,7 +114,7 @@ export default function TasksPage() {
         subtasks: [],
         attachments: [],
       };
-      setTasks([newTask, ...tasks]);
+      setTasks(prevTasks => [newTask, ...prevTasks]);
     }
     setIsFormOpen(false);
     setEditingTask(null);
@@ -94,7 +126,7 @@ export default function TasksPage() {
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks(tasks.filter(t => t.id !== taskId));
+    setTasks(prevTasks => prevTasks.filter(t => t.id !== taskId));
   };
 
   const handleToggleTaskStatus = (taskId: string, currentStatus: TaskStatus) => {
@@ -102,7 +134,7 @@ export default function TasksPage() {
     if (currentStatus === "pendente") nextStatus = "em-progresso";
     else if (currentStatus === "em-progresso") nextStatus = "concluída";
     else nextStatus = "pendente";
-    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: nextStatus } : t));
+    setTasks(prevTasks => prevTasks.map(t => t.id === taskId ? { ...t, status: nextStatus } : t));
   };
   
   const handleAddSubtask = (parentId: string, subtaskData: Omit<Subtask, "id" | "createdAt">) => {
@@ -112,21 +144,21 @@ export default function TasksPage() {
       createdAt: new Date().toISOString(),
       status: subtaskData.status || "pendente",
     };
-    setTasks(tasks.map(t => t.id === parentId ? { ...t, subtasks: [...t.subtasks, newSubtask] } : t));
+    setTasks(prevTasks => prevTasks.map(t => t.id === parentId ? { ...t, subtasks: [...(t.subtasks || []), newSubtask] } : t));
   };
 
   const handleDeleteSubtask = (parentId: string, subtaskId: string) => {
-    setTasks(tasks.map(t => 
+    setTasks(prevTasks => prevTasks.map(t => 
       t.id === parentId 
-        ? { ...t, subtasks: t.subtasks.filter(st => st.id !== subtaskId) } 
+        ? { ...t, subtasks: (t.subtasks || []).filter(st => st.id !== subtaskId) } 
         : t
     ));
   };
 
   const handleEditSubtask = (parentId: string, subtaskData: Subtask) => {
-     setTasks(tasks.map(t => 
+     setTasks(prevTasks => prevTasks.map(t => 
       t.id === parentId 
-        ? { ...t, subtasks: t.subtasks.map(st => st.id === subtaskData.id ? subtaskData : st) } 
+        ? { ...t, subtasks: (t.subtasks || []).map(st => st.id === subtaskData.id ? subtaskData : st) } 
         : t
     ));
   };
@@ -135,7 +167,8 @@ export default function TasksPage() {
     const searchMatch = task.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const statusMatch = statusFilter[task.status];
-    const priorityMatch = priorityFilter[task.priority];
+    // Handle case where task.priority might not be in priorityFilter (e.g. if types change or data is inconsistent)
+    const priorityMatch = task.priority ? priorityFilter[task.priority] : true;
     return searchMatch && statusMatch && priorityMatch;
   });
   
@@ -185,12 +218,12 @@ export default function TasksPage() {
           <DropdownMenuContent className="w-56">
             <DropdownMenuLabel>Status</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {Object.keys(statusFilter).map((statusKey) => (
+            {(Object.keys(statusFilter) as TaskStatus[]).map((statusKey) => (
               <DropdownMenuCheckboxItem
                 key={statusKey}
-                checked={statusFilter[statusKey as TaskStatus]}
+                checked={statusFilter[statusKey]}
                 onCheckedChange={(checked) =>
-                  setStatusFilter(prev => ({ ...prev, [statusKey]: checked }))
+                  setStatusFilter(prev => ({ ...prev, [statusKey]: Boolean(checked) }))
                 }
               >
                 {statusKey.charAt(0).toUpperCase() + statusKey.slice(1)}
@@ -198,12 +231,12 @@ export default function TasksPage() {
             ))}
             <DropdownMenuLabel className="mt-2">Prioridade</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {Object.keys(priorityFilter).map((priorityKey) => (
+            {(Object.keys(priorityFilter) as Priority[]).map((priorityKey) => (
               <DropdownMenuCheckboxItem
                 key={priorityKey}
-                checked={priorityFilter[priorityKey as Priority]}
+                checked={priorityFilter[priorityKey]}
                 onCheckedChange={(checked) =>
-                  setPriorityFilter(prev => ({ ...prev, [priorityKey]: checked }))
+                  setPriorityFilter(prev => ({ ...prev, [priorityKey]: Boolean(checked) }))
                 }
               >
                 {priorityKey}
@@ -225,3 +258,5 @@ export default function TasksPage() {
     </div>
   );
 }
+
+    
