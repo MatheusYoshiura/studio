@@ -26,6 +26,7 @@ const formSchema = z.object({
 });
 
 const USERS_STORAGE_KEY = "xmanager-users";
+const CURRENT_USER_EMAIL_KEY = "xmanager-currentUserEmail";
 
 interface StoredUser {
   name: string;
@@ -60,6 +61,7 @@ export function LoginForm() {
 
     // IMPORTANT: Password check is direct string comparison. NOT secure for real apps.
     if (user && user.passwordHash === values.password) {
+      localStorage.setItem(CURRENT_USER_EMAIL_KEY, user.email); // Store current user's email
       toast({
         title: "Login Bem-sucedido!",
         description: "Redirecionando para o dashboard...",
@@ -69,6 +71,7 @@ export function LoginForm() {
         router.push("/dashboard");
       }, 1000);
     } else {
+      localStorage.removeItem(CURRENT_USER_EMAIL_KEY); // Clear if login fails
       toast({
         title: "Falha no Login",
         description: "Usuário não encontrado ou senha incorreta.",

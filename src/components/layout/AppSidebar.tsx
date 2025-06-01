@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react"; // Added import for React
+import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -15,15 +15,15 @@ import {
   SidebarMenuSkeleton,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { LayoutDashboard, ListChecks, CalendarDays, LogOut, /* BarChart3, */ UserCircle, Settings } from "lucide-react"; // Removed BarChart3, kept Settings for Profile if needed, or can remove if not used
+import { LayoutDashboard, ListChecks, CalendarDays, LogOut, UserCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const CURRENT_USER_EMAIL_KEY = "xmanager-currentUserEmail";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "Tarefas", icon: ListChecks },
   { href: "/schedule", label: "Cronograma", icon: CalendarDays },
-  // { href: "/reports", label: "Relatórios", icon: BarChart3 }, // Removed
 ];
 
 export default function AppSidebar() {
@@ -31,12 +31,10 @@ export default function AppSidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
-    // Mock logout
-    console.log("User logged out");
+    localStorage.removeItem(CURRENT_USER_EMAIL_KEY);
     router.push("/auth/login");
   };
 
-  // Simple loading state simulation for skeleton
   const [isLoading, setIsLoading] = React.useState(true);
   React.useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 750);
@@ -62,7 +60,6 @@ export default function AppSidebar() {
               <SidebarMenuSkeleton showIcon />
               <SidebarMenuSkeleton showIcon />
               <SidebarMenuSkeleton showIcon />
-              {/* Removed one skeleton item to match navItems length */}
             </>
           ) : (
             navItems.map((item) => (
@@ -90,31 +87,16 @@ export default function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={pathname === "/profile"} // Placeholder
+              isActive={pathname === "/profile"} 
               tooltip={{ children: "Perfil", className: "bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-accent"}}
               className="justify-start"
             >
-              <Link href="/profile"> {/* Placeholder link */}
+              <Link href="/profile"> 
                 <UserCircle className="h-5 w-5" />
                 <span className="group-data-[[data-collapsible=icon]]:hidden">Perfil</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          {/* Removed Settings Item
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === "/settings"} // Placeholder
-              tooltip={{ children: "Configurações", className: "bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-accent"}}
-              className="justify-start"
-            >
-              <Link href="/settings"> 
-                <Settings className="h-5 w-5" />
-                <span className="group-data-[[data-collapsible=icon]]:hidden">Configurações</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          */}
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}

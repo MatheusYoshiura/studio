@@ -1,8 +1,9 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Bell, UserCircle } from "lucide-react";
+import { Bell, UserCircle, Settings } from "lucide-react"; // Added Settings
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,13 +14,39 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+const CURRENT_USER_EMAIL_KEY = "xmanager-currentUserEmail";
+const USERS_STORAGE_KEY = "xmanager-users";
+
+interface StoredUser {
+  name: string;
+  email: string;
+  phone: string;
+}
 
 export default function AppHeader() {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<StoredUser | null>(null);
+
+  useEffect(() => {
+    const userEmail = localStorage.getItem(CURRENT_USER_EMAIL_KEY);
+    if (userEmail) {
+      const usersFromStorage = localStorage.getItem(USERS_STORAGE_KEY);
+      if (usersFromStorage) {
+        const allUsers: StoredUser[] = JSON.parse(usersFromStorage);
+        const foundUser = allUsers.find(u => u.email === userEmail);
+        if (foundUser) {
+          setCurrentUser({name: foundUser.name, email: foundUser.email, phone: foundUser.phone});
+        }
+      }
+    }
+  }, []);
+
 
   const handleLogout = () => {
-    // Mock logout
-    console.log("User logged out");
+    localStorage.removeItem(CURRENT_USER_EMAIL_KEY);
+    setCurrentUser(null); // Clear current user state
     router.push("/auth/login");
   };
 
@@ -49,16 +76,24 @@ export default function AppHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">Usuário Exemplo</p>
+                <p className="text-sm font-medium leading-none">{currentUser?.name || "Usuário"}</p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  usuario@exemplo.com
+                  {currentUser?.email || "email@exemplo.com"}
                 </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Link href="/settings">Configurações</Link> {/* Placeholder link */}
+            <DropdownMenuItem asChild>
+              <Link href="/profile" className="flex items-center w-full">
+                 <UserCircle className="mr-2 h-4 w-4" /> Perfil
+              </Link>
             </DropdownMenuItem>
+            {/* Placeholder for settings, can be uncommented if a settings page is added */}
+            {/* <DropdownMenuItem asChild>
+              <Link href="/settings" className="flex items-center w-full">
+                <Settings className="mr-2 h-4 w-4" /> Configurações
+              </Link>
+            </DropdownMenuItem> */}
             <DropdownMenuItem>Suporte</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
