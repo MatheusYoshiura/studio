@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
@@ -24,10 +25,27 @@ const formSchema = z.object({
   password: z.string().min(1, { message: "Senha é obrigatória." }),
 });
 
+const USERS_STORAGE_KEY = "xmanager-users";
+
+interface StoredUser {
+  name: string;
+  email: string;
+  phone: string;
+  passwordHash: string; // In a real app, this would be a proper hash
+}
+
 export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [storedUsers, setStoredUsers] = useState<StoredUser[]>([]);
+
+  useEffect(() => {
+    const usersFromStorage = localStorage.getItem(USERS_STORAGE_KEY);
+    if (usersFromStorage) {
+      setStoredUsers(JSON.parse(usersFromStorage));
+    }
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,16 +56,25 @@ export function LoginForm() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Mock login logic
-    console.log("Login data:", values);
-    toast({
-      title: "Login Bem-sucedido!",
-      description: "Redirecionando para o dashboard...",
-    });
-    // Simulate API call
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 1000);
+    const user = storedUsers.find(u => u.email === values.email);
+
+    // IMPORTANT: Password check is direct string comparison. NOT secure for real apps.
+    if (user && user.passwordHash === values.password) {
+      toast({
+        title: "Login Bem-sucedido!",
+        description: "Redirecionando para o dashboard...",
+      });
+      // Simulate API call
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    } else {
+      toast({
+        title: "Falha no Login",
+        description: "Usuário não encontrado ou senha incorreta.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (

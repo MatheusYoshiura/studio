@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const phoneRegex = new RegExp(
@@ -30,10 +31,27 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres." }),
 });
 
+const USERS_STORAGE_KEY = "xmanager-users";
+
+interface StoredUser {
+  name: string;
+  email: string;
+  phone: string;
+  passwordHash: string; // In a real app, this would be a proper hash
+}
+
 export function SignupForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [storedUsers, setStoredUsers] = useState<StoredUser[]>([]);
+
+  useEffect(() => {
+    const usersFromStorage = localStorage.getItem(USERS_STORAGE_KEY);
+    if (usersFromStorage) {
+      setStoredUsers(JSON.parse(usersFromStorage));
+    }
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,13 +64,33 @@ export function SignupForm() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Mock signup logic
-    console.log("Signup data:", values);
+    const existingUser = storedUsers.find(user => user.email === values.email);
+    if (existingUser) {
+      toast({
+        title: "Erro no Cadastro",
+        description: "Este e-mail já está cadastrado. Tente fazer login.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For demonstration, storing password directly. In real apps, HASH passwords.
+    const newUser: StoredUser = {
+      name: values.name,
+      email: values.email,
+      phone: values.phone,
+      passwordHash: values.password, // IMPORTANT: This is NOT secure. Hash passwords in real apps.
+    };
+
+    const updatedUsers = [...storedUsers, newUser];
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    setStoredUsers(updatedUsers);
+
     toast({
       title: "Cadastro Realizado!",
       description: "Sua conta foi criada com sucesso. Faça login para continuar.",
     });
-    // Simulate API call
+    
     setTimeout(() => {
       router.push("/auth/login");
     }, 1500);
