@@ -108,7 +108,7 @@ export default function DashboardPage() {
           </div>
            <div className="flex flex-col items-center p-4 bg-card-foreground/5 rounded-lg hover:bg-card-foreground/10 transition-colors" title="Pressione S" data-ai-hint="focus search bar">
             <span className="text-2xl mb-1">S</span>
-            <p className="text-xs text-muted-foreground mt-1 pt-11">Buscar</p>
+            <p className="text-xs text-muted-foreground mt-1 pt-11">Buscar Tarefas</p>
           </div>
            <div className="flex flex-col items-center p-4 bg-card-foreground/5 rounded-lg hover:bg-card-foreground/10 transition-colors" title="Pressione C" data-ai-hint="go to schedule page">
             <span className="text-2xl mb-1">C</span>
